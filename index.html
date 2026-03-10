@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深海贪吃蛇 - 未来科技版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        /* 深海背景效果 */
+        .ocean-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                #001a33 0%, 
+                #003d66 20%, 
+                #006699 40%, 
+                #004d7a 60%, 
+                #002a4d 80%, 
+                #001122 100%);
+            z-index: -2;
+        }
+
+        /* 深海气泡动画 */
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+            border-radius: 50%;
+            animation: rise 8s infinite ease-in;
+            opacity: 0.6;
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -100px;
+                transform: translateX(0) scale(1);
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 0.3;
+            }
+            100% {
+                bottom: 100vh;
+                transform: translateX(100px) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* 游戏容器 */
+        .game-container {
+            position: relative;
+            background: rgba(0, 20, 40, 0.9);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.5),
+                inset 0 0 50px rgba(0, 255, 255, 0.1);
+        }
+
+        /* 标题 */
+        .game-title {
+            text-align: center;
+            color: #00ffff;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                0 0 40px #00ffff;
+            margin-bottom: 15px;
+            letter-spacing: 5px;
+        }
+
+        /* 分数面板 */
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+        }
+
+        .score-item {
+            color: #00ffff;
+            font-size: 18px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .score-value {
+            color: #ff00ff;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        /* 游戏画布 */
+        #gameCanvas {
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.3),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+            background: rgba(0, 10, 20, 0.8);
+        }
+
+        /* 控制说明 */
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+            color: #00ffff;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* 开始/结束界面 */
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 20, 40, 0.95);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+
+        .overlay h2 {
+            color: #00ffff;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ffff;
+        }
+
+        .overlay p {
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            color: #000;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 道具说明 */
+        .powerup-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 0, 255, 0.1);
+            border: 1px solid #ff00ff;
+            border-radius: 5px;
+            color: #ff00ff;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="ocean-bg"></div>
+    <div class="bubbles" id="bubbles"></div>
+    
+    <div class="game-container">
+        <h1 class="game-title">🐍 深海贪吃蛇</h1>
+        
+        <div class="score-panel">
+            <div class="score-item">
+                得分: <span class="score-value" id="score">0</span>
+            </div>
+            <div class="score-item">
+                长度: <span class="score-value" id="length">3</span>
+            </div>
+            <div class="score-item">
+                最高分: <span class="score-value" id="highScore">0</span>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        
+        <div class="powerup-info">
+            💎 金色道具 = 额外+3长度 | 🍎 红色食物 = 正常+1长度
+        </div>
+        
+        <div class="controls">
+            使用方向键 ↑ ↓ ← → 或 WASD 控制移动 | 空格键暂停
+        </div>
+        
+        <div class="overlay" id="startScreen">
+            <h2>🌊 深海贪吃蛇 🌊</h2>
+            <p>在未来科技风格的深海中生存<br>收集食物，躲避障碍，成为最长的蛇！</p>
+            <button class="btn" onclick="startGame()">开始游戏</button>
+        </div>
+        
+        <div class="overlay hidden" id="gameOverScreen">
+            <h2>游戏结束</h2>
+            <p>最终得分: <span id="finalScore">0</span></p>
+            <button class="btn" onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+
+    <script src="src/game.js"></script>
+</body>
+</html>
